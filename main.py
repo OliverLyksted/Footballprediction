@@ -1,6 +1,3 @@
-# pip install flask pandas scikit-learn matplotlib seaborn in terminal
-
-
 from flask import Flask, render_template, request
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -12,11 +9,14 @@ import os
 app = Flask(__name__)
 
 # Load the dataset and train the model when the app starts
-data_path = 'Footballprediction/Matches.zip'  # Adjust path if needed
+data_path = 'Model/Matches.csv'  # Adjust path if needed
 data = pd.read_csv(data_path)
 
+# Convert categorical variables to dummy variables (one-hot encoding)
+data = pd.get_dummies(data, drop_first=True)  # drop_first=True for avoiding dummy variable trap
+
 # Feature selection (customize according to your dataset)
-X = data.iloc[:, :-1]  # All columns except the last one (features)
+X = data.iloc[:, 5:42]  # All columns except the last one (features)
 y = data.iloc[:, -1]   # Last column (target: match result)
 
 # Split data into training and testing sets
