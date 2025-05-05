@@ -1,4 +1,4 @@
-//pip install flask pandas scikit-learn matplotlib seaborn in terminal
+# pip install flask pandas scikit-learn matplotlib seaborn in terminal
 
 
 from flask import Flask, render_template, request
