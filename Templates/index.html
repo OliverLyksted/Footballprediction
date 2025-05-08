@@ -1,18 +1,146 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="da">
 <head>
+    <meta charset="UTF-8">
     <title>Fodboldforudsigelse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #388e3c 0%, #2e7d32 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+
+        .field-lines {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 100%;
+            background-image:
+                linear-gradient(white 2px, transparent 2px),
+                linear-gradient(to right, white 2px, transparent 2px);
+            background-size: 100% 20%, 20% 100%;
+            background-repeat: repeat;
+            opacity: 0.08;
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            opacity: 0.08;
+        }
+
+        .goal {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;          /* Øget fra 160px til 240px */
+    height: 90px;          /* Øget fra 60px til 90px */
+    border: 3px solid white;
+    border-top: none;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 1;
+}
+
+.goal.top {
+    top: 0;
+    border-bottom: none;
+    border-top: 3px solid white;
+}
+
+.goal.bottom {
+    bottom: 0;
+    border-top: none;
+    border-bottom: 3px solid white;
+        }
+        .stands {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 60px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #444 0px,
+        #444 10px,
+        #333 10px,
+        #333 20px
+    );
+    z-index: 0;
+    opacity: 0.6;
+}
+
+.stands.left {
+    left: 0;
+    border-right: 2px solid #222;
+}
+
+.stands.right {
+    right: 0;
+    border-left: 2px solid #222;
+}
+.stands::after {
+    content: "";
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    width: 80%;
+    height: 60%;
+    background-image: radial-gradient(circle, red 2px, transparent 2px),
+                      radial-gradient(circle, yellow 2px, transparent 2px),
+                      radial-gradient(circle, blue 2px, transparent 2px);
+    background-size: 12px 12px;
+    background-position: center;
+    background-repeat: repeat;
+    opacity: 0.4;
+}
+
+
+    </style>
 </head>
-<body>
-    <h2>Indtast hold</h2>
-    <form action="/predict" method="post">
-        <label for="Hometeam">Hjemmehold:</label><br>
-        <input type="text" id="Hometeam" name="Hometeam"><br><br>
-        <label for="Awayteam">Udehold:</label><br>
-        <input type="text" id="Awayteam" name="Awayteam"><br><br>
-        <input type="submit" value="Forudsig resultat">
-    </form>
-    <h3>{{ prediction_text }}</h3>
+<body class="min-h-screen flex items-center justify-center font-sans relative text-white">
+    <!-- Banedesign -->
+    <div class="field-lines"></div>
+    <div class="center-circle"></div>
+    <div class="goal top"></div>
+    <div class="goal bottom"></div>
+    <div class="stands left"></div>
+<div class="stands right"></div>
+
+
+    <!-- Formularkort -->
+    <div class="bg-white bg-opacity-90 text-gray-800 rounded-2xl shadow-2xl p-10 w-full max-w-md text-center z-10">
+        <h1 class="text-3xl font-bold mb-6">⚽ Fodboldforudsigelse</h1>
+        <form action="/predict" method="post" class="space-y-6">
+            <div>
+                <label for="Hometeam" class="block text-sm font-medium text-gray-700">Hjemmehold</label>
+                <input type="text" id="Hometeam" name="Hometeam" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 p-2">
+            </div>
+            <div>
+                <label for="Awayteam" class="block text-sm font-medium text-gray-700">Udehold</label>
+                <input type="text" id="Awayteam" name="Awayteam" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 p-2">
+            </div>
+            <button type="submit"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">
+                Forudsig resultat
+            </button>
+        </form>
+
+        {% if prediction_text %}
+            <div class="mt-8 p-4 bg-green-100 rounded-lg shadow text-green-800 text-lg font-medium">
+                🔮 {{ prediction_text }}
+            </div>
+        {% endif %}
+    </div>
 </body>
 </html>
