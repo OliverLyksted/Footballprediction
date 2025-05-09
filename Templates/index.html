@@ -10,7 +10,6 @@
             position: relative;
             overflow: hidden;
         }
-        
 
         .field-lines {
             position: absolute;
@@ -40,70 +39,70 @@
         }
 
         .goal {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 240px;          /* Øget fra 160px til 240px */
-    height: 90px;          /* Øget fra 60px til 90px */
-    border: 3px solid white;
-    border-top: none;
-    background: rgba(255, 255, 255, 0.05);
-    z-index: 1;
-}
-
-.goal.top {
-    top: 0;
-    border-bottom: none;
-    border-top: 3px solid white;
-}
-
-.goal.bottom {
-    bottom: 0;
-    border-top: none;
-    border-bottom: 3px solid white;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 240px;
+            height: 90px;
+            border: 3px solid white;
+            border-top: none;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 1;
         }
+
+        .goal.top {
+            top: 0;
+            border-bottom: none;
+            border-top: 3px solid white;
+        }
+
+        .goal.bottom {
+            bottom: 0;
+            border-top: none;
+            border-bottom: 3px solid white;
+        }
+
         .stands {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    width: 60px;
-    background: repeating-linear-gradient(
-        to bottom,
-        #444 0px,
-        #444 10px,
-        #333 10px,
-        #333 20px
-    );
-    z-index: 0;
-    opacity: 0.6;
-}
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 60px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #444 0px,
+                #444 10px,
+                #333 10px,
+                #333 20px
+            );
+            z-index: 0;
+            opacity: 0.6;
+        }
 
-.stands.left {
-    left: 0;
-    border-right: 2px solid #222;
-}
+        .stands.left {
+            left: 0;
+            border-right: 2px solid #222;
+        }
 
-.stands.right {
-    right: 0;
-    border-left: 2px solid #222;
-}
-.stands::after {
-    content: "";
-    position: absolute;
-    top: 20%;
-    left: 10%;
-    width: 80%;
-    height: 60%;
-    background-image: radial-gradient(circle, red 2px, transparent 2px),
-                      radial-gradient(circle, yellow 2px, transparent 2px),
-                      radial-gradient(circle, blue 2px, transparent 2px);
-    background-size: 12px 12px;
-    background-position: center;
-    background-repeat: repeat;
-    opacity: 0.4;
-}
+        .stands.right {
+            right: 0;
+            border-left: 2px solid #222;
+        }
 
-
+        .stands::after {
+            content: "";
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 80%;
+            height: 60%;
+            background-image: radial-gradient(circle, red 2px, transparent 2px),
+                              radial-gradient(circle, yellow 2px, transparent 2px),
+                              radial-gradient(circle, blue 2px, transparent 2px);
+            background-size: 12px 12px;
+            background-position: center;
+            background-repeat: repeat;
+            opacity: 0.4;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center font-sans relative text-white">
@@ -113,8 +112,7 @@
     <div class="goal top"></div>
     <div class="goal bottom"></div>
     <div class="stands left"></div>
-<div class="stands right"></div>
-
+    <div class="stands right"></div>
 
     <!-- Formularkort -->
     <div class="bg-white bg-opacity-90 text-gray-800 rounded-2xl shadow-2xl p-10 w-full max-w-md text-center z-10">
@@ -138,9 +136,20 @@
 
         {% if prediction_text %}
             <div class="mt-8 p-4 bg-green-100 rounded-lg shadow text-green-800 text-lg font-medium">
-                🔮 {{ prediction_text }}
+                🔮 {{ prediction_text|safe }}
             </div>
         {% endif %}
+
+        {% if confidence_text %}
+            <div class="mt-4 p-3 bg-yellow-100 rounded-lg shadow text-yellow-800 text-sm">
+                📊 {{ confidence_text|safe }}
+            </div>
+        {% endif %}
+
+        {% if num_matches %}
+    <p class="text-sm mt-2 text-gray-600">🔁 Baseret på {{ num_matches }} tidligere kampe</p>
+{% endif %}
+
     </div>
 </body>
 </html>
