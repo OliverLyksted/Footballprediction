@@ -65,6 +65,8 @@ def predict():
 
     if subset.empty:
         prediction_text = f"Der findes ikke data for kamp mellem {hometeam} og {awayteam}."
+        confidence_text = "Ingen modeltillinger tilgængelige pga. manglende data."
+        num_matches = 0
     else:
         avg_input = subset[features].mean().values.reshape(1, -1)
 
