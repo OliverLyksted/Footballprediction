@@ -22,8 +22,13 @@ raw_data.dropna(subset=cols_to_numeric + ['FTResult'], inplace=True)
 raw_data['TotalCorners'] = raw_data['HomeCorners'] + raw_data['AwayCorners']
 raw_data['TotalYellow'] = raw_data['HomeYellow'] + raw_data['AwayYellow']
 
-# Definér features og targets
-features = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away']
+# Tilføj forskels-features
+raw_data['EloDiff'] = raw_data['HomeElo'] - raw_data['AwayElo']
+raw_data['FormDiff'] = raw_data['Form5Home'] - raw_data['Form5Away']
+
+# Opdater features
+features = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away', 'EloDiff', 'FormDiff']
+
 
 X = raw_data[features]
 y_result = raw_data['FTResult']
@@ -39,13 +44,13 @@ X_train, X_test, y_train_result, y_test_result = train_test_split(X_imputed, y_r
 _, _, y_train_corners, _ = train_test_split(X_imputed, y_corners, test_size=0.2, random_state=42)
 _, _, y_train_yellow, _ = train_test_split(X_imputed, y_yellow, test_size=0.2, random_state=42)
 
-model_result = RandomForestClassifier(random_state=42)
+model_result = RandomForestClassifier(random_state=42, class_weight='balanced')
 model_result.fit(X_train, y_train_result)
 
-model_corners = RandomForestClassifier(random_state=42)
+model_corners = RandomForestClassifier(random_state=42, class_weight='balanced')
 model_corners.fit(X_train, y_train_corners)
 
-model_yellow = RandomForestClassifier(random_state=42)
+model_yellow = RandomForestClassifier(random_state=42, class_weight='balanced')
 model_yellow.fit(X_train, y_train_yellow)
 
 @app.route('/')
@@ -57,11 +62,17 @@ def predict():
     hometeam = request.form['Hometeam']
     awayteam = request.form['Awayteam']
 
-    # Find alle kampe mellem de to hold
+    # Find kun kampe hvor hjemme- og udehold er i samme roller som input
     subset = raw_data[
-        ((raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)) |
-        ((raw_data['HomeTeam'] == awayteam) & (raw_data['AwayTeam'] == hometeam))
+        (raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)
     ]
+
+    # Fallback til alle indbyrdes kampe hvis der ikke findes nogen i korrekt opstilling
+    if subset.empty:
+        subset = raw_data[
+            ((raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)) |
+            ((raw_data['HomeTeam'] == awayteam) & (raw_data['AwayTeam'] == hometeam))
+        ]
 
     if subset.empty:
         prediction_text = f"Der findes ikke data for kamp mellem {hometeam} og {awayteam}."
@@ -88,18 +99,19 @@ def predict():
             f"🟨 Gule kort (total): {int(pred_yellow)}"
         )
         confidence_text = (
-            f"Modelens tillid til resultatet: {model_result.predict_proba(avg_input)[0][1]:.2f}<br>"
-            f"Modelens tillid til hjørnespark: {model_corners.predict_proba(avg_input)[0][1]:.2f}<br>"
-            f"Modelens tillid til gule kort: {model_yellow.predict_proba(avg_input)[0][1]:.2f}"
+            f"Modelens tillid til resultatet: {model_result.predict_proba(avg_input).max():.2f}<br>"
+            f"Modelens tillid til hjørnespark: {model_corners.predict_proba(avg_input).max():.2f}<br>"
+            f"Modelens tillid til gule kort: {model_yellow.predict_proba(avg_input).max():.2f}"
         )
         num_matches = len(subset)
 
     return render_template(
-    'index.html',
-    prediction_text=prediction_text,
-    confidence_text=confidence_text,
-    num_matches=num_matches
-)
+        'index.html',
+        prediction_text=prediction_text,
+        confidence_text=confidence_text,
+        num_matches=num_matches
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True)
