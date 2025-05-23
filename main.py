@@ -26,7 +26,6 @@ raw_data['Form5Diff'] = raw_data['Form5Home'] - raw_data['Form5Away']
 raw_data['TotalCorners'] = raw_data['HomeCorners'] + raw_data['AwayCorners']
 raw_data['TotalYellow'] = raw_data['HomeYellow'] + raw_data['AwayYellow']
 
-<<<<<<< HEAD
 # Tilføj forskels-features
 raw_data['EloDiff'] = raw_data['HomeElo'] - raw_data['AwayElo']
 raw_data['FormDiff'] = raw_data['Form5Home'] - raw_data['Form5Away']
@@ -35,10 +34,6 @@ raw_data['FormDiff'] = raw_data['Form5Home'] - raw_data['Form5Away']
 features = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away', 'EloDiff', 'FormDiff']
 
 
-=======
-# Features og targets
-features = ['EloDiff', 'Form3Diff', 'Form5Diff']
->>>>>>> 9bb8dad69b25c5194bec9686184e4b7c3e471059
 X = raw_data[features]
 y_goals = raw_data[['FTHome', 'FTAway']]
 y_corners = raw_data['TotalCorners']
@@ -53,14 +48,8 @@ X_train, X_test, y_train_goals, y_test_goals = train_test_split(X_imputed, y_goa
 _, _, y_train_corners, _ = train_test_split(X_imputed, y_corners, test_size=0.2, random_state=42)
 _, _, y_train_yellow, _ = train_test_split(X_imputed, y_yellow, test_size=0.2, random_state=42)
 
-<<<<<<< HEAD
 model_result = RandomForestClassifier(random_state=42, class_weight='balanced')
 model_result.fit(X_train, y_train_result)
-=======
-# Modeller
-model_goals = MultiOutputRegressor(RandomForestRegressor(random_state=42))
-model_goals.fit(X_train, y_train_goals)
->>>>>>> 9bb8dad69b25c5194bec9686184e4b7c3e471059
 
 model_corners = RandomForestClassifier(random_state=42, class_weight='balanced')
 model_corners.fit(X_train, y_train_corners)
@@ -77,10 +66,7 @@ def predict():
     hometeam = request.form['Hometeam']
     awayteam = request.form['Awayteam']
 
-<<<<<<< HEAD
     # Find kun kampe hvor hjemme- og udehold er i samme roller som input
-=======
->>>>>>> 9bb8dad69b25c5194bec9686184e4b7c3e471059
     subset = raw_data[
         (raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)
     ]
@@ -122,15 +108,11 @@ def predict():
             f"🔁 Hjørnespark (total): {int(pred_corners)}<br>"
             f"🟨 Gule kort (total): {int(pred_yellow)}"
         )
-<<<<<<< HEAD
         confidence_text = (
             f"Modelens tillid til resultatet: {model_result.predict_proba(avg_input).max():.2f}<br>"
             f"Modelens tillid til hjørnespark: {model_corners.predict_proba(avg_input).max():.2f}<br>"
             f"Modelens tillid til gule kort: {model_yellow.predict_proba(avg_input).max():.2f}"
         )
-=======
-        confidence_text = "Resultatet er baseret på forudsagte mål afrundet til hele tal."
->>>>>>> 9bb8dad69b25c5194bec9686184e4b7c3e471059
         num_matches = len(subset)
 
     return render_template(
