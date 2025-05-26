@@ -35,7 +35,7 @@ features = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5A
 
 
 X = raw_data[features]
-y_goals = raw_data[['FTHome', 'FTAway']]
+y_result = raw_data['FTResult']
 y_corners = raw_data['TotalCorners']
 y_yellow = raw_data['TotalYellow']
 
@@ -44,7 +44,7 @@ imputer = SimpleImputer(strategy="mean")
 X_imputed = imputer.fit_transform(X)
 
 # Train-test splits
-X_train, X_test, y_train_goals, y_test_goals = train_test_split(X_imputed, y_goals, test_size=0.2, random_state=42)
+X_train, X_test, y_train_result, y_test_result = train_test_split(X_imputed, y_result, test_size=0.2, random_state=42)
 _, _, y_train_corners, _ = train_test_split(X_imputed, y_corners, test_size=0.2, random_state=42)
 _, _, y_train_yellow, _ = train_test_split(X_imputed, y_yellow, test_size=0.2, random_state=42)
 
@@ -85,26 +85,20 @@ def predict():
     else:
         avg_input = subset[features].mean().values.reshape(1, -1)
 
-        # Predict goals
-        predicted_goals = model_goals.predict(avg_input)[0]
-        pred_home_goals = int(round(predicted_goals[0]))
-        pred_away_goals = int(round(predicted_goals[1]))
+        pred_result = model_result.predict(avg_input)[0]
+        pred_corners = model_corners.predict(avg_input)[0]
+        pred_yellow = model_yellow.predict(avg_input)[0]
 
-        # Derive result
-        if pred_home_goals > pred_away_goals:
+        if pred_result == 'H':
             result_text = f"{hometeam} vinder."
-        elif pred_away_goals > pred_home_goals:
+        elif pred_result == 'A':
             result_text = f"{awayteam} vinder."
         else:
             result_text = "Uafgjort."
 
-        # Predict corners and yellow cards
-        pred_corners = model_corners.predict(avg_input)[0]
-        pred_yellow = model_yellow.predict(avg_input)[0]
-
         prediction_text = (
             f"🔮 Forudsigelse for {hometeam} vs {awayteam}:<br>"
-            f"🏆 Resultat: {result_text} ({hometeam} {pred_home_goals} - {pred_away_goals} {awayteam})<br>"
+            f"🏆 Resultat: {result_text}<br>"
             f"🔁 Hjørnespark (total): {int(pred_corners)}<br>"
             f"🟨 Gule kort (total): {int(pred_yellow)}"
         )
