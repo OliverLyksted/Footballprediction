@@ -12,8 +12,9 @@ app = Flask(__name__)
 
 # Indlæs og forbered data
 data_path = 'Model/Matches.csv'
-raw_data = pd.read_csv(data_path, low_memory=False)
+raw_data = pd.read_csv(data_path, low_memory=False) 
 
+# Vi renamer kolonnerne for at undgå problemer med mellemrum
 cols_to_numeric = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away',
                    'HomeCorners', 'AwayCorners', 'HomeYellow', 'AwayYellow', 'FTHome', 'FTAway']
 raw_data[cols_to_numeric] = raw_data[cols_to_numeric].apply(pd.to_numeric, errors='coerce')
@@ -28,26 +29,31 @@ raw_data['FormDiff'] = raw_data['Form5Home'] - raw_data['Form5Away']
 
 features = ['HomeElo', 'AwayElo', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away', 'EloDiff', 'FormDiff']
 
+# Vi inkluderer kun de relevante features for modeltræning
 X = raw_data[features]
 y_result = raw_data['FTResult']
 y_corners = raw_data['TotalCorners']
 y_yellow = raw_data['TotalYellow']
 
 # Imputer
+# SimpleImputer til at håndtere manglende værdier til gennemsnit
 imputer = SimpleImputer(strategy="mean")
 X_imputed = imputer.fit_transform(X)
 
 # Encode FTResult til 0, 1, 2
+# 'H' for Home Win, 'A' for Away Win, 'D' for Draw
 label_encoder = LabelEncoder()
 y_encoded_result = label_encoder.fit_transform(y_result)
 y_encoded_result_cat = to_categorical(y_encoded_result)
 
 # Split data
+# Vi deler data i trænings- og test-sæt for både resultat, hjørnespark og gule kort
 X_train, X_test, y_train_result, y_test_result = train_test_split(X_imputed, y_encoded_result_cat, test_size=0.2, random_state=42)
 _, _, y_train_corners, _ = train_test_split(X_imputed, y_corners, test_size=0.2, random_state=42)
 _, _, y_train_yellow, _ = train_test_split(X_imputed, y_yellow, test_size=0.2, random_state=42)
 
 # Model til resultat (klassifikation)
+# Vi bruger en simpel feedforward neural netværksmodel til at forudsige kampresultatet
 model_result = Sequential([
     Dense(16, activation='relu', input_shape=(X_train.shape[1],)),
     Dense(8, activation='relu'),
@@ -57,6 +63,7 @@ model_result.compile(optimizer='adam', loss='categorical_crossentropy', metrics=
 model_result.fit(X_train, y_train_result, epochs=10, batch_size=8, validation_split=0.1)
 
 # Model til hjørnespark (regression)
+# Vi bruger en simpel feedforward neural netværksmodel til at forudsige antallet af hjørnespark
 model_corners = Sequential([
     Dense(16, activation='relu', input_shape=(X_train.shape[1],)),
     Dense(8, activation='relu'),
@@ -65,40 +72,51 @@ model_corners = Sequential([
 model_corners.compile(optimizer='adam', loss='mse')
 model_corners.fit(X_train, y_train_corners, epochs=10, batch_size=8, validation_split=0.1)
 
-# Model til gule kort (regression)
+# Model til gule kort (regression)  
+# Vi bruger en simpel feedforward neural netværksmodel til at forudsige antallet af gule kort
 model_yellow = Sequential([
     Dense(16, activation='relu', input_shape=(X_train.shape[1],)),
     Dense(8, activation='relu'),
     Dense(1)
 ])
+# Vi bruger Mean Squared Error som tab for regression 
 model_yellow.compile(optimizer='adam', loss='mse')
 model_yellow.fit(X_train, y_train_yellow, epochs=10, batch_size=8, validation_split=0.1)
 
+# Flask app setup
 @app.route('/')
 def index():
     return render_template('index.html')
 
+## Forudsigelsesrute 
+# Denne rute håndterer POST-anmodninger fra formularen og returnerer forudsigelser baseret på de indtastede holdnavne. 
 @app.route('/predict', methods=['POST'])
 def predict():
     hometeam = request.form['Hometeam']
     awayteam = request.form['Awayteam']
 
+    # Tjek om holdnavne er tomme
     subset = raw_data[
         (raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)
     ]
+    # Hvis der ikke er data for det specifikke match, tjekker vi om der er data for omvendt match
     if subset.empty:
         subset = raw_data[
             ((raw_data['HomeTeam'] == hometeam) & (raw_data['AwayTeam'] == awayteam)) |
             ((raw_data['HomeTeam'] == awayteam) & (raw_data['AwayTeam'] == hometeam))
         ]
 
+    # Hvis der ikke er data for det specifikke match, returner en besked
     if subset.empty:
         prediction_text = f"Der findes ikke data for kamp mellem {hometeam} og {awayteam}."
         confidence_text = "Ingen modeltillinger tilgængelige pga. manglende data."
         num_matches = 0
     else:
+        # Forbered inputdata til forudsigelse
+        # Vi bruger gennemsnittet af de relevante features for det specifikke match
         avg_input = subset[features].mean().values.reshape(1, -1)
 
+        # Forudsig resultat, hjørnespark og gule kort
         pred_result_probs = model_result.predict(avg_input)
         pred_result_class = np.argmax(pred_result_probs)
         pred_result_label = label_encoder.inverse_transform([pred_result_class])[0]
@@ -113,18 +131,22 @@ def predict():
         else:
             result_text = "Uafgjort."
 
+        # Forberedelse af forudsigelsestekst
         prediction_text = (
             f"🔮 Forudsigelse for {hometeam} vs {awayteam}:<br>"
             f"🏆 Resultat: {result_text}<br>"
             f"🔁 Hjørnespark (total): {pred_corners:.0f}<br>"
             f"🟨 Gule kort (total): {pred_yellow:.0f}"
         )
+        # Forberedelse af tillidstekst
+        # Vi antager, at tilliden er baseret på den maksimale sandsynlighed for resultatet
         confidence_text = (
             f"Modelens tillid til resultatet: {pred_result_probs.max():.2f}<br>"
      
         )
         num_matches = len(subset)
 
+# Returner resultatet til HTML-skabelonen
     return render_template(
         'index.html',
         prediction_text=prediction_text,
