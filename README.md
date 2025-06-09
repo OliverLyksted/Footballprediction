@@ -11,7 +11,6 @@ Klik på "Customize installation", og klik derefter bare "Next" og "Install"
 
 py -3.10 -m venv venv
 
-.\venv\Scripts\activate
 
 pip install flask pandas scikit-learn tensorflow numpy
 
