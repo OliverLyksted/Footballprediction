@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
@@ -6,6 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.utils import to_categorical
+
 import numpy as np
 
 app = Flask(__name__)
@@ -60,7 +61,7 @@ model_result = Sequential([
     Dense(3, activation='softmax')
 ])
 model_result.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model_result.fit(X_train, y_train_result, epochs=10, batch_size=8, validation_split=0.1)
+model_result.fit(X_train, y_train_result, epochs=1, batch_size=8, validation_split=0.1)
 
 # Model til hjørnespark (regression)
 # Vi bruger en simpel feedforward neural netværksmodel til at forudsige antallet af hjørnespark
@@ -70,7 +71,7 @@ model_corners = Sequential([
     Dense(1)
 ])
 model_corners.compile(optimizer='adam', loss='mse')
-model_corners.fit(X_train, y_train_corners, epochs=10, batch_size=8, validation_split=0.1)
+model_corners.fit(X_train, y_train_corners, epochs=1, batch_size=8, validation_split=0.1)
 
 # Model til gule kort (regression)  
 # Vi bruger en simpel feedforward neural netværksmodel til at forudsige antallet af gule kort
@@ -81,12 +82,37 @@ model_yellow = Sequential([
 ])
 # Vi bruger Mean Squared Error som tab for regression 
 model_yellow.compile(optimizer='adam', loss='mse')
-model_yellow.fit(X_train, y_train_yellow, epochs=10, batch_size=8, validation_split=0.1)
+model_yellow.fit(X_train, y_train_yellow, epochs=1, batch_size=8, validation_split=0.1)
+
+def get_teams_from_division(data, division_code):
+    # Filtrer rækker efter division, fx "E0" for Premier League
+    filtered = data[data['Division'] == division_code]
+
+    # Hent unikke holdnavne fra både HomeTeam og AwayTeam
+    home_teams = filtered['HomeTeam'].unique()
+    away_teams = filtered['AwayTeam'].unique()
+
+    # Sammensæt unikke hold i en liste
+    all_teams = list(set(home_teams) | set(away_teams))
+
+    # Sorter listen alfabetisk (valgfrit)
+    all_teams.sort()
+    return all_teams
+
 
 # Flask app setup
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Filtrer hold fra Premier League (division 'E0')
+    pl_teams = sorted(set(raw_data.loc[raw_data['Division'] == 'E0', 'HomeTeam'].unique()) | 
+                      set(raw_data.loc[raw_data['Division'] == 'E0', 'AwayTeam'].unique()))
+    return render_template('index.html', pl_teams=pl_teams)
+
+
+@app.route('/teams', methods=['GET'])
+def get_teams():
+    teams = get_teams_from_division(raw_data, "E0")  # Hent hold i Premier League
+    return jsonify(teams)  # Returner som JSON
 
 ## Forudsigelsesrute 
 # Denne rute håndterer POST-anmodninger fra formularen og returnerer forudsigelser baseret på de indtastede holdnavne. 
@@ -145,6 +171,8 @@ def predict():
      
         )
         num_matches = len(subset)
+
+        
 
 # Returner resultatet til HTML-skabelonen
     return render_template(
