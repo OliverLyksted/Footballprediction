@@ -160,7 +160,16 @@
             <p class="text-sm mt-2 text-gray-600">🔁 Baseret på {{ num_matches }} tidligere kampe</p>
         {% endif %}
 
-       
+        <!-- Vis liste med Premier League-hold -->
+        <div class="mt-8 bg-white bg-opacity-70 rounded-lg p-4 text-gray-800 max-h-48 overflow-auto text-left">
+            <h2 class="text-xl font-semibold mb-2">Premier League Hold</h2>
+            <ul class="list-disc list-inside text-sm">
+                {% for team in pl_teams %}
+                    <li>{{ team }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
     </div>
 </body>
 </html>
